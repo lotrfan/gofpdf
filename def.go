@@ -240,6 +240,7 @@ type Fpdf struct {
 	color            struct {                  // Composite values of colors
 		draw, fill, text clrType
 	}
+	viewerPreferences map[string]string
 }
 
 type encType struct {

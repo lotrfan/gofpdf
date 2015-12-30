@@ -187,6 +187,7 @@ func fpdfNew(orientationStr, unitStr, sizeStr, fontDirStr string, size SizeType)
 	f.layerInit()
 	f.catalogSort = gl.catalogSort
 	f.creationDate = gl.creationDate
+	f.viewerPreferences = make(map[string]string)
 	return
 }
 
@@ -3008,6 +3009,28 @@ func (f *Fpdf) SetCatalogSort(flag bool) {
 	f.catalogSort = flag
 }
 
+// SetViewerPreferences sets the viewer preferences. Valid values for 'key' and 'value':
+// Key			Values
+// PrintScaling	AppDefault or None (case-insensitive)
+func (f *Fpdf) SetViewerPreferences(key, value string) {
+	switch strings.ToLower(key) {
+	case "printscaling":
+		if f.pdfVersion < "1.6" {
+			f.pdfVersion = "1.6"
+		}
+		switch strings.ToLower(value) {
+		case "appdefault":
+			f.viewerPreferences["/PrintScaling"] = "/AppDefault"
+		case "none":
+			f.viewerPreferences["/PrintScaling"] = "/None"
+		default:
+			f.err = fmt.Errorf("unknown PrintScaling: %s", value)
+		}
+	default:
+		f.err = fmt.Errorf("unknown ViewPreferences key: %s", value)
+	}
+}
+
 // SetDefaultCreationDate sets the default value of the document creation date
 // that will be used when initializing a new Fpdf instance. See
 // SetCreationDate() for more details.
@@ -3556,6 +3579,7 @@ func (f *Fpdf) putcatalog() {
 		f.outf("/Outlines %d 0 R", f.outlineRoot)
 		f.out("/PageMode /UseOutlines")
 	}
+	f.putViewerPreferences()
 	// Layers
 	f.layerPutCatalog()
 }
@@ -3628,6 +3652,17 @@ func (f *Fpdf) putbookmarks() {
 		f.outf("/Last %d 0 R>>", n+lru[0])
 		f.out("endobj")
 	}
+}
+
+func (f *Fpdf) putViewerPreferences() {
+	if len(f.viewerPreferences) == 0 {
+		return
+	}
+	f.out("/ViewerPreferences <<")
+	for k, v := range f.viewerPreferences {
+		f.outf("%s %s", k, v)
+	}
+	f.out(">>")
 }
 
 func (f *Fpdf) enddoc() {
