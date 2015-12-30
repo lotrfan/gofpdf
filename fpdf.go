@@ -3011,7 +3011,8 @@ func (f *Fpdf) SetCatalogSort(flag bool) {
 
 // SetViewerPreferences sets the viewer preferences. Valid values for 'key' and 'value':
 // Key			Values
-// PrintScaling	AppDefault or None (case-insensitive)
+// PrintScaling AppDefault or None (case-insensitive)
+// Duplex       Simplex, DuplexFlipShortEdge, or DuplexFlipLongEdge (case-insensitive)
 func (f *Fpdf) SetViewerPreferences(key, value string) {
 	switch strings.ToLower(key) {
 	case "printscaling":
@@ -3025,6 +3026,20 @@ func (f *Fpdf) SetViewerPreferences(key, value string) {
 			f.viewerPreferences["/PrintScaling"] = "/None"
 		default:
 			f.err = fmt.Errorf("unknown PrintScaling: %s", value)
+		}
+	case "duplex":
+		if f.pdfVersion < "1.7" {
+			f.pdfVersion = "1.7"
+		}
+		switch strings.ToLower(value) {
+		case "simplex":
+			f.viewerPreferences["/Duplex"] = "/Simplex"
+		case "duplexflipshortedge":
+			f.viewerPreferences["/Duplex"] = "/DuplexFlipShortEdge"
+		case "duplexfliplongedge":
+			f.viewerPreferences["/Duplex"] = "/DuplexFlipLongEdge"
+		default:
+			f.err = fmt.Errorf("unknown Duplex: %s", value)
 		}
 	default:
 		f.err = fmt.Errorf("unknown ViewPreferences key: %s", value)
